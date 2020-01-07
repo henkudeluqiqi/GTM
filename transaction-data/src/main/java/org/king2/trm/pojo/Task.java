@@ -9,11 +9,36 @@ public class Task implements Serializable {
 
     private Lock lock = new ReentrantLock ();
     private Condition condition = lock.newCondition ();
+    private Boolean flag = false;
 
+    public Boolean getFlag() {
+        return flag;
+    }
+
+    public void setFlag(Boolean flag) {
+        this.flag = flag;
+    }
+
+    public Lock getLock() {
+        return lock;
+    }
+
+    public void setLock(Lock lock) {
+        this.lock = lock;
+    }
+
+    public Condition getCondition() {
+        return condition;
+    }
+
+    public void setCondition(Condition condition) {
+        this.condition = condition;
+    }
 
     public void waitTask() {
         try {
             lock.lock ();
+            this.flag = true;
             condition.await ();
         } catch (InterruptedException e) {
             e.printStackTrace ();
@@ -24,7 +49,8 @@ public class Task implements Serializable {
 
     public void signalTask() {
         lock.lock ();
-        condition.signal ();
+        condition.signalAll ();
         lock.unlock ();
+        this.flag = false;
     }
 }

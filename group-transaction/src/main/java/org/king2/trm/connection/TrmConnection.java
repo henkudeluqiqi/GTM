@@ -8,6 +8,7 @@ import org.king2.trm.pool.ThreadPool;
 import java.sql.*;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Random;
 import java.util.concurrent.Executor;
 
 /**
@@ -26,6 +27,7 @@ public class TrmConnection implements Connection {
         this.connection = connection;
     }
 
+    public static Random random = new Random ();
 
     @Override
     public void commit() throws SQLException {
@@ -40,6 +42,7 @@ public class TrmConnection implements Connection {
         ThreadPool.POOL.execute (new Runnable () {
             @Override
             public void run() {
+                Thread.currentThread ().setName ("阻塞线程" + random.nextInt (100000));
                 transactionPojo.getTask ().waitTask ();
                 // 一旦被唤醒 说明服务端那边已经给出信息了 我们需要判断是回滚还是提交
                 TransactionPojo cachePojo = TransactionCache.TRM_POJO_CACHE.get (transactionPojo.getTrmId ());
