@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module org.jetbrains.idea.maven.project.MavenProjectsManager.isMavenModule="true" type="JAVA_MODULE" version="4">
+  <component name="FacetManager">
+    <facet type="Spring" name="Spring">
+      <configuration />
+    </facet>
+  </component>
+  <component name="NewModuleRootManager" LANGUAGE_LEVEL="JDK_1_5">
+    <output url="file://$MODULE_DIR$/../transaction-manager/target/classes" />
+    <output-test url="file://$MODULE_DIR$/../transaction-manager/target/test-classes" />
+    <content url="file://$MODULE_DIR$/../transaction-manager">
+      <sourceFolder url="file://$MODULE_DIR$/../transaction-manager/src/main/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../transaction-manager/src/main/resources" type="java-resource" />
+      <sourceFolder url="file://$MODULE_DIR$/../transaction-manager/src/test/java" isTestSource="true" />
+      <excludeFolder url="file://$MODULE_DIR$/../transaction-manager/target" />
+      <excludeFolder url="file://$MODULE_DIR$/target" />
+    </content>
+    <orderEntry type="jdk" jdkName="1.8" jdkType="JavaSDK" />
+    <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="module" module-name="transaction-data" />
+    <orderEntry type="library" name="Maven: io.netty:netty-all:4.1.16.Final" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.httpcomponents:httpclient:4.5.4" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.httpcomponents:httpcore:4.4.7" level="project" />
+    <orderEntry type="library" name="Maven: commons-logging:commons-logging:1.2" level="project" />
+    <orderEntry type="library" name="Maven: commons-codec:commons-codec:1.10" level="project" />
+    <orderEntry type="library" name="Maven: com.alibaba:fastjson:1.2.51" level="project" />
+  </component>
+</module>

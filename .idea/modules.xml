@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/.idea/GTM.iml" filepath="$PROJECT_DIR$/.idea/GTM.iml" />
+      <module fileurl="file://$PROJECT_DIR$/group-transaction/group-transaction.iml" filepath="$PROJECT_DIR$/group-transaction/group-transaction.iml" />
+      <module fileurl="file://$PROJECT_DIR$/transaction-data/transcation-data.iml" filepath="$PROJECT_DIR$/transaction-data/transcation-data.iml" />
+      <module fileurl="file://$PROJECT_DIR$/transaction-manager/transcation-manager.iml" filepath="$PROJECT_DIR$/transaction-manager/transcation-manager.iml" />
+    </modules>
+  </component>
+</project>
