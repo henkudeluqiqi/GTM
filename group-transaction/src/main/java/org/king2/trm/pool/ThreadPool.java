@@ -24,5 +24,5 @@ public class ThreadPool {
     /**
      * 100线程的线程池
      */
-    public static final ExecutorService POOL = Executors.newFixedThreadPool (100);
+    public static final ExecutorService POOL = Executors.newCachedThreadPool ();
 }

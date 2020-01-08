@@ -1,9 +1,11 @@
 package org.king2.trm.cache;
 
+import org.king2.trm.TransactionType;
 import org.king2.trm.pojo.TransactionPojo;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * =======================================================
@@ -48,5 +50,18 @@ public class TransactionCache {
      */
     public static final ThreadLocal<String> CURRENT_GROUP_ID =
             new ThreadLocal<> ();
+
+    /**
+     * 读写锁
+     */
+    public static final ReentrantReadWriteLock rwLock =
+            new ReentrantReadWriteLock ();
+
+    /**
+     * rollback以后就不需要commit的数据
+     * group->group
+     */
+    public static final Map<String, String> ROLLBACK_NO_COMMIT =
+            new ConcurrentHashMap<> ();
 
 }

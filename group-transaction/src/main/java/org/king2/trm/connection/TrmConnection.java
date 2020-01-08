@@ -10,6 +10,8 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Random;
 import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * =======================================================
@@ -45,8 +47,8 @@ public class TrmConnection implements Connection {
                 Thread.currentThread ().setName ("阻塞线程" + random.nextInt (100000));
                 transactionPojo.getTask ().waitTask ();
                 // 一旦被唤醒 说明服务端那边已经给出信息了 我们需要判断是回滚还是提交
-                TransactionPojo cachePojo = TransactionCache.TRM_POJO_CACHE.get (transactionPojo.getTrmId ());
                 try {
+                    TransactionPojo cachePojo = TransactionCache.TRM_POJO_CACHE.get (transactionPojo.getTrmId ());
                     if (cachePojo.getTransactionType ().equals (TransactionType.COMMIT)) {
                         // 提交
                         connection.commit ();

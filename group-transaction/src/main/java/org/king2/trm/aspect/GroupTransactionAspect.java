@@ -14,6 +14,7 @@ import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Method;
 import java.util.UUID;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * =======================================================
@@ -89,9 +90,18 @@ public class GroupTransactionAspect {
         // 封装参数
         TransactionPojo transactionPojo = new TransactionPojo (groupId, trmId, TransactionType.CREATE_TRM_GROUP);
         // 存入事务缓存中
-        TransactionCache.TRM_POJO_CACHE.put (trmId, transactionPojo);
+        // 加锁
+        ReentrantReadWriteLock.WriteLock writeLock = TransactionCache.rwLock.writeLock ();
+        writeLock.lock ();
+        try {
+            TransactionCache.TRM_POJO_CACHE.put (trmId, transactionPojo);
+            TransactionCache.FINAL_TRM_ID.put (trmId, true);
+        } catch (Exception e) {
+            e.printStackTrace ();
+        } finally {
+            writeLock.unlock ();
+        }
         TransactionCache.CURRENT_TD.set (transactionPojo);
-        TransactionCache.FINAL_TRM_ID.put (trmId, true);
         // 发送消息
         channel.writeAndFlush (transactionPojo);
         return transactionPojo;
@@ -109,7 +119,7 @@ public class GroupTransactionAspect {
         TransactionPojo transactionPojo =
                 new TransactionPojo (groupId, trmId, TransactionType.REGISTER_TRM);
         // 存入事务缓存中
-        TransactionCache.TRM_POJO_CACHE.put (trmId, transactionPojo);
+        tpcPut (trmId, transactionPojo);
         TransactionCache.CURRENT_TD.set (transactionPojo);
         // 发送消息
         channel.writeAndFlush (transactionPojo);
@@ -127,7 +137,7 @@ public class GroupTransactionAspect {
         TransactionPojo transactionPojo =
                 new TransactionPojo (groupId, trmId, TransactionType.ROLLBACK);
         // 存入事务缓存中
-        TransactionCache.TRM_POJO_CACHE.put (trmId, transactionPojo);
+        tpcPut (trmId, transactionPojo);
         TransactionCache.CURRENT_TD.set (transactionPojo);
         // 发送消息
         channel.writeAndFlush (transactionPojo);
@@ -144,14 +154,42 @@ public class GroupTransactionAspect {
         if (TransactionCache.FINAL_TRM_ID.get (trmId) == null) {
             return;
         }
+        // 加锁
+        /*ReentrantReadWriteLock.ReadLock readLock = TransactionCache.rwLock.readLock ();
+        readLock.lock ();
+
+        try {
+            // 判断是否已经回滚了 回滚以后就不用再继续进行提交了
+            String rollbackNoCommitFlag = TransactionCache.ROLLBACK_NO_COMMIT.get (groupId);
+            if (rollbackNoCommitFlag != null && !"".equals (rollbackNoCommitFlag)) {
+                return;
+            }
+        } catch (Exception e) {
+            e.printStackTrace ();
+        } finally {
+            readLock.unlock ();
+        }*/
         Channel channel = NettyClient.client.getChannel ();
         // 封装参数
         TransactionPojo transactionPojo =
                 new TransactionPojo (groupId, trmId, TransactionType.COMMIT);
         // 存入事务缓存中
-        TransactionCache.TRM_POJO_CACHE.put (trmId, transactionPojo);
+        tpcPut (trmId, transactionPojo);
         TransactionCache.CURRENT_TD.set (transactionPojo);
         // 发送消息
         channel.writeAndFlush (transactionPojo);
+    }
+
+    public void tpcPut(String trmId, TransactionPojo transactionPojo) {
+        // 加锁
+        ReentrantReadWriteLock.WriteLock writeLock = TransactionCache.rwLock.writeLock ();
+        writeLock.lock ();
+        try {
+            TransactionCache.TRM_POJO_CACHE.put (trmId, transactionPojo);
+        } catch (Exception e) {
+            e.printStackTrace ();
+        } finally {
+            writeLock.unlock ();
+        }
     }
 }

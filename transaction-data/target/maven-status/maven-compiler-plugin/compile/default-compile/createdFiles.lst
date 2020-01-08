@@ -1,7 +1,0 @@
-org\king2\trm\pojo\TransactionPojo.class
-org\king2\trm\pojo\Task.class
-org\king2\trm\rpc\RpcDecoder.class
-org\king2\trm\rpc\RpcResponse.class
-org\king2\trm\rpc\RpcEncoder.class
-org\king2\trm\TransactionType.class
-org\king2\trm\cache\TransactionCache.class

@@ -1,6 +1,7 @@
 package org.king2.trm.cache;
 
 import io.netty.channel.ChannelHandlerContext;
+import org.king2.trm.TransactionType;
 import org.king2.trm.rpc.RpcResponse;
 
 import java.util.List;
@@ -46,4 +47,11 @@ public class TransactionCache {
      */
     public static final Map<String, Boolean> CURRENT_TRM_GROUP_IS_ROLLBACK =
             new ConcurrentHashMap<String, Boolean> ();
+
+    /**
+     * 事务组的最终状态
+     */
+    public static final Map<String, TransactionType> FINAL_TRM_TYPE =
+            new ConcurrentHashMap<String, TransactionType> ();
+
 }

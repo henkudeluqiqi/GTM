@@ -27,11 +27,24 @@ public class RpcResponse implements Serializable {
      * 通讯的管道
      */
     private ChannelHandlerContext chx;
+    /**
+     * 这次事务的分组ID
+     */
+    private String groupId;
 
-    public RpcResponse(TransactionType finalTransactionType, String trmId, ChannelHandlerContext chx) {
+    public RpcResponse(TransactionType finalTransactionType, String trmId, ChannelHandlerContext chx, String groupId) {
         this.finalTransactionType = finalTransactionType;
         this.trmId = trmId;
         this.chx = chx;
+        this.groupId = groupId;
+    }
+
+    public String getGroupId() {
+        return groupId;
+    }
+
+    public void setGroupId(String groupId) {
+        this.groupId = groupId;
     }
 
     public String getTrmId() {
