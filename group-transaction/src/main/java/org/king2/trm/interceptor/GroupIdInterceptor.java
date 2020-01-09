@@ -22,6 +22,9 @@ public class GroupIdInterceptor implements HandlerInterceptor {
 
         // 从头部获取groupId
         String groupId = request.getHeader ("groupId");
+        if (groupId == null) {
+            groupId = request.getParameter ("groupId");
+        }
         TransactionCache.CURRENT_GROUP_ID.set (groupId);
         return true;
     }
