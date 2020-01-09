@@ -2,6 +2,7 @@ package org.king2.trm.cache;
 
 import org.king2.trm.TransactionType;
 import org.king2.trm.pojo.TransactionPojo;
+import org.springframework.context.ApplicationContext;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -63,5 +64,11 @@ public class TransactionCache {
      */
     public static final Map<String, String> ROLLBACK_NO_COMMIT =
             new ConcurrentHashMap<> ();
+
+
+    /**
+     * spring容器
+     */
+    public static ApplicationContext SPRING_CONTEXT;
 
 }
