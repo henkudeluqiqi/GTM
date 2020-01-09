@@ -8,6 +8,7 @@ import org.king2.trm.cache.TransactionCache;
 import org.king2.trm.pojo.TransactionPojo;
 import org.springframework.core.Ordered;
 import org.springframework.stereotype.Component;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
 import java.lang.reflect.Method;
@@ -30,20 +31,6 @@ public class RestTemplateAspect implements Ordered {
             "org.springframework.web.client.RestTemplate.getForObject( ..))")
     public void getForObject(ProceedingJoinPoint pjp) throws Exception, Throwable {
 
-        /**
-         * 取出方法 判断方法的参数个数，好知道如何调用
-         */
-        Method invokeMethod = ((MethodSignature) pjp.getSignature ()).getMethod ();
-        Class<?>[] parameterTypes = invokeMethod.getParameterTypes ();
-        // 定义最后的参数是Map还是Object...
-        boolean finalParaTypeIsMap = false;
-
-        // 经过测试，调用的都是三个参数的数据，所以我们只能通过类型去判断
-        if (parameterTypes[2].getName ().equals (Map.class.getName ())) {
-            // 是map类型
-            finalParaTypeIsMap = true;
-        }
-
         // 我们需要做的就是将groupId带入到下游系统去
         TransactionPojo transactionPojo = TransactionCache.CURRENT_TD.get ();
         if (transactionPojo == null) {
@@ -55,30 +42,38 @@ public class RestTemplateAspect implements Ordered {
         // 那么就需要动态改变URL的参数了
         String url = (String) args[0];
         if (url.indexOf ("?") > 0) {
-            args[0] = url + "&groupId=" + groupId;
+            args[0] = url + "&GTM_GROUP_ID=" + groupId;
         } else {
-            args[0] = url + "?groupId=" + groupId;
+            args[0] = url + "?GTM_GROUP_ID=" + groupId;
         }
-
-
-        /*if (finalParaTypeIsMap) {
-            // 为Map添加参数信息
-            Map<String, Object> maps = (Map<String, Object>) args[2];
-            maps.put ("groupId", groupId);
-        } else {
-            // 那么就需要动态改变URL的参数了
-            String url = (String) args[0];
-            if (url.indexOf ("?") > 0) {
-                args[0] = url + "&groupId=" + groupId;
-            } else {
-                args[0] = url + "?groupId=" + groupId;
-            }
-        }*/
 
         // 执行方法
         pjp.proceed (args);
     }
 
+
+    @Around("execution(* org.springframework.web.client.RestTemplate.postForObject(..))")
+    public void postForObject(ProceedingJoinPoint pjp) throws Throwable {
+
+        // 我们需要做的就是将groupId带入到下游系统去
+        TransactionPojo transactionPojo = TransactionCache.CURRENT_TD.get ();
+        String groupId = transactionPojo.getGroupId ();
+        // 取出参数并赋值
+        Object arg = pjp.getArgs ()[1];
+        if (arg instanceof MultiValueMap) {
+            MultiValueMap map = (MultiValueMap) arg;
+            map.add ("GTM_GROUP_ID", groupId);
+        } else {
+            // 拼接到URL上
+            String url = (String) pjp.getArgs ()[0];
+            if (url.indexOf ("?") > 0) {
+                pjp.getArgs ()[0] = url + "&GTM_GROUP_ID=" + groupId;
+            } else {
+                pjp.getArgs ()[0] = url + "?GTM_GROUP_ID=" + groupId;
+            }
+        }
+        pjp.proceed (pjp.getArgs ());
+    }
 
     /**
      * 让我们这个切面高于别人的切面

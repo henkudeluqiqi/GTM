@@ -18,7 +18,7 @@ public class HttpClient {
             TransactionPojo transactionPojo = TransactionCache.CURRENT_TD.get ();
             HttpGet httpGet = new HttpGet (url);
             httpGet.addHeader ("Content-type", "application/json");
-            httpGet.addHeader ("groupId", transactionPojo.getGroupId ());
+            httpGet.addHeader ("GTM_GROUP_ID", transactionPojo.getGroupId ());
             CloseableHttpResponse response = httpClient.execute (httpGet);
 
             if (response.getStatusLine ().getStatusCode () == HttpStatus.SC_OK) {

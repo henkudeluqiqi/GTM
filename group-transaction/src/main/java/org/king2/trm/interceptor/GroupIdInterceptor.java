@@ -21,9 +21,9 @@ public class GroupIdInterceptor implements HandlerInterceptor {
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
 
         // 从头部获取groupId
-        String groupId = request.getHeader ("groupId");
+        String groupId = request.getHeader ("GTM_GROUP_ID");
         if (groupId == null) {
-            groupId = request.getParameter ("groupId");
+            groupId = request.getParameter ("GTM_GROUP_ID");
         }
         TransactionCache.CURRENT_GROUP_ID.set (groupId);
         return true;
