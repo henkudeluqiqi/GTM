@@ -9,3 +9,6 @@ transaction-data 事务管理用到的一些信息和参数。
 
 # GroupTransaction
 group-transaction 主要是创建了一个分布式的分布事务，使用者只需要在方法上标上@GroupTransaction注解，即可使用。
+
+# 分布式事务框架GTM的设计图
+![Image text](https://github.com/henkudeluqiqi/GTM/raw/master/框架流程.png)
