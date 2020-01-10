@@ -8,10 +8,13 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import jdk.internal.util.xml.impl.Input;
 import org.king2.trm.pojo.TransactionPojo;
 import org.king2.trm.rpc.RpcDecoder;
 import org.king2.trm.rpc.RpcEncoder;
 import org.king2.trm.rpc.RpcResponse;
+
+import java.io.*;
 
 /**
  * =======================================================
@@ -56,6 +59,18 @@ public class TrmServer {
 
         //成功绑定到端口之后,给channel增加一个 管道关闭的监听器并同步阻塞,直到channel关闭,线程才会往下执行,结束进程。
         future.channel ().closeFuture ().sync ();
+    }
 
+
+    public static void main(String[] args) throws IOException {
+        String s = Class.class.getClass ().getResource ("/").getPath () + "tm.properties";
+        File file = new File (s);
+        InputStream inputStream = new FileInputStream (file);
+        InputStreamReader inputStreamReader = new InputStreamReader (inputStream);
+        BufferedReader reader = new BufferedReader (inputStreamReader);
+        String str = "";
+        while ((str = reader.readLine ()) != null) {
+            System.out.println (str);
+        }
     }
 }

@@ -15,10 +15,16 @@ import java.io.Serializable;
  */
 public class RpcResponse implements Serializable {
 
+
     /**
-     * 本次事务的最终状态
+     * 本次事务的最终状态，这是迎合全部的一个状态
      */
     private TransactionType finalTransactionType;
+
+    /**
+     * 他自己的一个状态
+     */
+    private TransactionType oneType;
     /**
      * 本次事务的id
      */
@@ -37,6 +43,15 @@ public class RpcResponse implements Serializable {
         this.trmId = trmId;
         this.chx = chx;
         this.groupId = groupId;
+    }
+
+
+    public TransactionType getOneType() {
+        return oneType;
+    }
+
+    public void setOneType(TransactionType oneType) {
+        this.oneType = oneType;
     }
 
     public String getGroupId() {

@@ -27,7 +27,7 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
 
     //接受client发送的消息
     @Override
-    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+    public void channelRead(ChannelHandlerContext ctx, Object msg) {
 
         // 将消息强转成我们自己的数据
         TransactionPojo transactionPojo = (TransactionPojo) msg;
@@ -61,9 +61,11 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
             try {
                 // 注册事务组
                 // 取出原本的事务组的通讯管道
-                TransactionCache.TRM_GROUP_CACHE.get (transactionPojo.getGroupId ())
-                        .add (new RpcResponse (TransactionType.NONE, transactionPojo.getTrmId (), ctx,
-                                transactionPojo.getGroupId ()));
+                List<RpcResponse> rpcResponses = TransactionCache.TRM_GROUP_CACHE.get (transactionPojo.getGroupId ());
+                if (rpcResponses != null) {
+                    rpcResponses.add (new RpcResponse (TransactionType.NONE, transactionPojo.getTrmId (), ctx,
+                            transactionPojo.getGroupId ()));
+                }
                 System.out.println ("注册事务组---->>>" + JSON.toJSONString (transactionType));
             } catch (Exception e) {
                 e.printStackTrace ();
@@ -72,9 +74,11 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
             }
         } else if (transactionType.equals (TransactionType.COMMIT)) {
             readWrite.readLock ().lock ();
+            setOneType (transactionPojo.getGroupId (), transactionPojo.getTrmId (), TransactionType.COMMIT);
             try {
                 // 判断当前事务组是否已经进行了处理
                 if (TransactionCache.CURRENT_TRM_GROUP_IS_ROLLBACK.get (transactionPojo.getGroupId ()) != null &&
+                        TransactionCache.CURRENT_TRM_GROUP_IS_ROLLBACK.get (transactionPojo.getGroupId ()) != null &&
                         TransactionCache.CURRENT_TRM_GROUP_IS_ROLLBACK.get (transactionPojo.getGroupId ())) {
                     System.out.println ("---->>>>>> 事务组" + transactionPojo.getGroupId () + "--已经进行了ROLLBACK...");
                     return;
@@ -83,25 +87,23 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
                 // 判断是否是最终性的事务id
                 String trmId = TransactionCache.FINAL_TRMID_CACHe.get (transactionPojo.getGroupId ());
                 if (trmId != null && !"".equals (trmId) && trmId.equals (transactionPojo.getTrmId ())) {
-                    // 说明是最终一致性
-                    // 需要判断最终一致性的状态
+                    /**
+                     * 需要判断最终一致性的状态
+                     * 为什么需要判断呢？因为我们前面发生ROLLBACK的时候会去查看是否是最终的事务发出的，如果不是只是修改一下本次事务组的状态
+                     */
                     TransactionType finalTrmType = TransactionCache.FINAL_TRM_TYPE.get (transactionPojo.getGroupId ());
                     if (finalTrmType == null || !finalTrmType.equals (TransactionType.ROLLBACK)) {
                         // 进行COMMIT
-                        for (RpcResponse rpcResponse : TransactionCache.TRM_GROUP_CACHE.get (transactionPojo.getGroupId ())) {
-                            rpcResponse.setFinalTransactionType (TransactionType.COMMIT);
-                            rpcResponse.getChx ().writeAndFlush (rpcResponse);
-                            System.out.println ("发出COMMIT---->>>" + JSON.toJSONString (rpcResponse));
-                        }
+                        send (transactionPojo.getGroupId (), TransactionType.COMMIT);
+
                     } else {
                         // 进行ROLLBACK
-                        for (RpcResponse rpcResponse : TransactionCache.TRM_GROUP_CACHE.get (transactionPojo.getGroupId ())) {
-                            rpcResponse.setFinalTransactionType (TransactionType.ROLLBACK);
-                            rpcResponse.getChx ().writeAndFlush (rpcResponse);
-                                System.out.println ("发出ROLLBACK---->>>" + JSON.toJSONString (rpcResponse));
-                        }
+                        send (transactionPojo.getGroupId (), TransactionType.ROLLBACK);
                     }
 
+
+                    // 是最终事务发出的信息 ，那么就需要根据配置将一些缓存清除
+                    clear (transactionPojo.getGroupId ());
                 }
             } catch (Exception e) {
                 e.printStackTrace ();
@@ -111,7 +113,7 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
         } else if (transactionType.equals (TransactionType.ROLLBACK)) {
             readWrite.readLock ().lock ();
             try {
-
+                setOneType (transactionPojo.getGroupId (), transactionPojo.getTrmId (), TransactionType.ROLLBACK);
                 /**
                  * 需要判断是否是最终事务发过来的ROLLBACK，如果是ROLLBACK的话才发出rollback信息
                  * 如果不是最终事务发过来的ROLLBACK只需要将这个事务组的最终状态改为ROLLBACK就行
@@ -120,13 +122,10 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
                 if (trmId != null && !"".equals (trmId) && trmId.equals (transactionPojo.getTrmId ())) {
                     // 告诉系统这个事务组已经进行处理
                     TransactionCache.CURRENT_TRM_GROUP_IS_ROLLBACK.put (transactionPojo.getGroupId (), true);
-                    // 说明是最终一致性的事务
-                    // 通过groupId取出所有的通讯管道
-                    for (RpcResponse rpcResponse : TransactionCache.TRM_GROUP_CACHE.get (transactionPojo.getGroupId ())) {
-                        rpcResponse.setFinalTransactionType (TransactionType.ROLLBACK);
-                        rpcResponse.getChx ().writeAndFlush (rpcResponse);
-                        System.out.println ("发出ROLLBACK---->>>" + JSON.toJSONString (rpcResponse));
-                    }
+                    // 进行ROLLBACK
+                    send (transactionPojo.getGroupId (), TransactionType.ROLLBACK);
+                    // 是最终事务发出的信息 ，那么就需要根据配置将一些缓存清除
+                    clear (transactionPojo.getGroupId ());
                 } else {
                     // 修改最终一致性事务的状态
                     TransactionCache.FINAL_TRM_TYPE.put (transactionPojo.getGroupId (), TransactionType.ROLLBACK);
@@ -139,6 +138,63 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
             }
         }
     }
+
+    /**
+     * 根据groupId拿出所有的事务，然后发出类型
+     *
+     * @param groupId
+     * @param sendType
+     */
+    private static void send(String groupId, TransactionType sendType) {
+        // 进行COMMIT
+        for (RpcResponse rpcResponse : TransactionCache.TRM_GROUP_CACHE.get (groupId)) {
+            rpcResponse.setFinalTransactionType (sendType);
+            rpcResponse.getChx ().writeAndFlush (rpcResponse);
+            System.out.println ("发出" + sendType + "---->>>" + JSON.toJSONString (rpcResponse));
+        }
+    }
+
+
+    /**
+     * 记录一个事务的状态
+     *
+     * @param groupId
+     * @param trmId
+     * @param transactionType
+     */
+    private static void setOneType(String groupId, String trmId, TransactionType transactionType) {
+        List<RpcResponse> rpcResponses = TransactionCache.TRM_GROUP_CACHE.get (groupId);
+        if (rpcResponses != null && rpcResponses.size () > 0) {
+            for (RpcResponse rpcRespons : rpcResponses) {
+                if (rpcRespons.getTrmId ().equals (trmId)) {
+                    rpcRespons.setOneType (transactionType);
+                    break;
+                }
+            }
+        }
+    }
+
+    /**
+     * 清空缓存
+     *
+     * @param groupId
+     */
+    private static void clear(String groupId) {
+        // 判断默认是否需要清楚数据
+        if (TransactionCache.clearFlag) {
+            // 清空事务组对应的所有RpcResponse
+            TransactionCache.TRM_GROUP_CACHE.remove (groupId);
+            // 删除最终事务Id
+            TransactionCache.FINAL_TRMID_CACHe.remove (groupId);
+            // 删除最终事务是否已经ROLLBACK了
+            TransactionCache.CURRENT_TRM_GROUP_IS_ROLLBACK.remove (groupId);
+            // 删除最终事务的状态
+            TransactionCache.FINAL_TRM_TYPE.remove (groupId);
+        } else {
+            // 说明要存入
+        }
+    }
+
 
     //通知处理器最后的channelRead()是当前批处理中的最后一条消息时调用
     @Override
