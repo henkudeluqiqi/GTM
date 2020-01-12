@@ -63,4 +63,9 @@ public class TransactionCache {
      */
     public static boolean clearFlag = true;
 
+    /**
+     * 服务端的配置文件缓存
+     */
+    public static final Map<String, String> PROPERTIES_CONFIG =
+            new ConcurrentHashMap<> ();
 }

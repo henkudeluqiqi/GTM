@@ -13,9 +13,14 @@ import com.alibaba.fastjson.JSON;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import org.king2.trm.TransactionType;
+import org.king2.trm.cache.ServerTransactionCache;
 import org.king2.trm.cache.TransactionCache;
+import org.king2.trm.enums.PropertiesConfigEnum;
+import org.king2.trm.pojo.RedisKey;
 import org.king2.trm.pojo.TransactionPojo;
 import org.king2.trm.rpc.RpcResponse;
+import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,6 +29,16 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 public class ServerHandler extends ChannelInboundHandlerAdapter {
 
     private static final ReentrantReadWriteLock readWrite = new ReentrantReadWriteLock ();
+    private static final ReentrantReadWriteLock sizeReadWrite = new ReentrantReadWriteLock ();
+    /**
+     * 正常的调用链最大次数添加到缓存中去
+     */
+    public static Integer MAX_SIZE_ADD_CACHE = 100;
+
+    /**
+     * 当前添加的次数
+     */
+    public volatile static Integer CURRENT_ADD_SIZE = 0;
 
     //接受client发送的消息
     @Override
@@ -103,7 +118,7 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
 
 
                     // 是最终事务发出的信息 ，那么就需要根据配置将一些缓存清除
-                    clear (transactionPojo.getGroupId ());
+                    clear (transactionPojo.getGroupId (), false);
                 }
             } catch (Exception e) {
                 e.printStackTrace ();
@@ -125,7 +140,7 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
                     // 进行ROLLBACK
                     send (transactionPojo.getGroupId (), TransactionType.ROLLBACK);
                     // 是最终事务发出的信息 ，那么就需要根据配置将一些缓存清除
-                    clear (transactionPojo.getGroupId ());
+                    clear (transactionPojo.getGroupId (), true);
                 } else {
                     // 修改最终一致性事务的状态
                     TransactionCache.FINAL_TRM_TYPE.put (transactionPojo.getGroupId (), TransactionType.ROLLBACK);
@@ -179,7 +194,7 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
      *
      * @param groupId
      */
-    private static void clear(String groupId) {
+    private static void clear(String groupId, boolean flag) {
         // 判断默认是否需要清楚数据
         if (TransactionCache.clearFlag) {
             // 清空事务组对应的所有RpcResponse
@@ -191,10 +206,67 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
             // 删除最终事务的状态
             TransactionCache.FINAL_TRM_TYPE.remove (groupId);
         } else {
-            // 说明要存入
+            // 开锁
+            sizeReadWrite.writeLock ().lock ();
+            try {
+                /**
+                 *  需要存入的话 我们需要判断是否是立马存入，因为这里区分了ROLLBACK和COMMIT的调用链
+                 *  如果是ROLLBACK的话就需要立马存入缓存中，因为COMMIT的调用链没有那么重要
+                 */
+                // 判断是否存入Redis中
+                if ("true".equals (TransactionCache.PROPERTIES_CONFIG.get (PropertiesConfigEnum.ACTIVE_REDIS_CACHE))) {
+                    // 存入redis
+                    if (flag) {
+                        /**
+                         * 立马存入说明已经发出ROLLBACK请求了 ，所以我们需要立马存入
+                         */
+                        addRedis (RedisKey.GTM_ROLLBACK_KEY + "", JSON.toJSONString (TransactionCache.TRM_GROUP_CACHE.get (groupId)));
+                    } else {
+                        // 非
+                        if (CURRENT_ADD_SIZE++ > MAX_SIZE_ADD_CACHE) {
+                            // 将当前添加的次数重置
+                            CURRENT_ADD_SIZE = 0;
+                            // 存入缓存中
+                            addRedis (RedisKey.GTM_COMMIT_KEY + "", JSON.toJSONString (TransactionCache.TRM_GROUP_CACHE.get (groupId)));
+                        }
+                    }
+
+                } else {
+                    // 存入其他缓存
+                    addElseCache ();
+                }
+            } catch (Exception e) {
+                e.printStackTrace ();
+            } finally {
+                sizeReadWrite.writeLock ().unlock ();
+            }
         }
     }
 
+    /**
+     * 将数据存入其他缓冲中
+     */
+    public static void addElseCache() {
+    }
+
+    /**
+     * 将数据添加到Redis中
+     */
+    public static void addRedis(String key, String value) {
+        Jedis jedis = null;
+        JedisPool jedispool = ServerTransactionCache.JEDISPOOL;
+        try {
+            jedis = jedispool.getResource ();
+            // 存入数据
+            jedis.lpush (key, value);
+        } catch (Exception e) {
+            e.printStackTrace ();
+        } finally {
+            if (jedis != null) {
+                jedis.close ();
+            }
+        }
+    }
 
     //通知处理器最后的channelRead()是当前批处理中的最后一条消息时调用
     @Override

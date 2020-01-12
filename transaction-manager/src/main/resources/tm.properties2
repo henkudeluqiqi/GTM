@@ -18,26 +18,26 @@ gtm-server-port=8888
 #
 ######################################## Redis的配置 Start ########################################
 # 是否启用redis作为缓存中心，如果这边不设置为true的话，那么redis缓存中心将不会被解析
-active-redis-cache=true
+# active-redis-cache=false
 #
 # redis的地址
-redis-host=localhost
+# redis-host=localhost
 #
 # redis的端口信息
-redis-port=6379
+# redis-port=6379
 #
 # redis超时的信息
-redis-timeout=5000
+# redis-timeout=5000
 #
-# 连接池最大连接数
-redis-pool-max-active=500
+# 连接池最大连接数（使用负值表示没有限制）
+# redis-pool-max-active=-1
 #
 # 连接池最大阻塞等待时间（使用负值表示没有限制）
-redis-pool-max-wait=-1
+# redis-pool-max-wait=-1
 #
 # 连接池中的最大空闲连接
-redis-pool-max-idle=200
+# redis-pool-max-idle=200
 #
 # 连接池中的最小空闲连接
-redis-pool-min-idle=0
+# redis-pool-min-idle=100
 ######################################## Redis的配置 END ########################################

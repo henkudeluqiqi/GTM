@@ -61,16 +61,4 @@ public class TrmServer {
         future.channel ().closeFuture ().sync ();
     }
 
-
-    public static void main(String[] args) throws IOException {
-        String s = Class.class.getClass ().getResource ("/").getPath () + "tm.properties";
-        File file = new File (s);
-        InputStream inputStream = new FileInputStream (file);
-        InputStreamReader inputStreamReader = new InputStreamReader (inputStream);
-        BufferedReader reader = new BufferedReader (inputStreamReader);
-        String str = "";
-        while ((str = reader.readLine ()) != null) {
-            System.out.println (str);
-        }
-    }
 }
