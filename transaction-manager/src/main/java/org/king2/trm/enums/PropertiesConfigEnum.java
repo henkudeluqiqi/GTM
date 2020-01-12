@@ -53,4 +53,9 @@ public class PropertiesConfigEnum {
      * GTM服务端的端口
      */
     public static final String GTM_SERVER_PORT = "gtm-server-port";
+
+    /**
+     * 是否将调用链存入缓冲中
+     */
+    public static final String ADD_REDIS_FLAG = "add-redis-flag";
 }

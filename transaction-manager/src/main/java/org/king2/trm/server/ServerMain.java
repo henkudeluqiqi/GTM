@@ -153,7 +153,7 @@ public class ServerMain {
 
         // 初始化默认的端口
         TransactionCache.PROPERTIES_CONFIG.put (PropertiesConfigEnum.GTM_SERVER_PORT, "8888");
-
+        TransactionCache.PROPERTIES_CONFIG.put (PropertiesConfigEnum.ADD_REDIS_FLAG, "true");
     }
 
     /**

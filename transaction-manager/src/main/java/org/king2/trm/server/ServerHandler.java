@@ -88,9 +88,9 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
                 readWrite.writeLock ().unlock ();
             }
         } else if (transactionType.equals (TransactionType.COMMIT)) {
-            readWrite.readLock ().lock ();
-            setOneType (transactionPojo.getGroupId (), transactionPojo.getTrmId (), TransactionType.COMMIT);
+            readWrite.writeLock ().lock ();
             try {
+                setOneType (transactionPojo.getGroupId (), transactionPojo.getTrmId (), TransactionType.COMMIT);
                 // 判断当前事务组是否已经进行了处理
                 if (TransactionCache.CURRENT_TRM_GROUP_IS_ROLLBACK.get (transactionPojo.getGroupId ()) != null &&
                         TransactionCache.CURRENT_TRM_GROUP_IS_ROLLBACK.get (transactionPojo.getGroupId ()) != null &&
@@ -110,23 +110,24 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
                     if (finalTrmType == null || !finalTrmType.equals (TransactionType.ROLLBACK)) {
                         // 进行COMMIT
                         send (transactionPojo.getGroupId (), TransactionType.COMMIT);
-
+                        // 是最终事务发出的信息 ，那么就需要根据配置将一些缓存清除
+                        clear (transactionPojo.getGroupId (), false);
                     } else {
                         // 进行ROLLBACK
                         send (transactionPojo.getGroupId (), TransactionType.ROLLBACK);
+                        // 是最终事务发出的信息 ，那么就需要根据配置将一些缓存清除
+                        clear (transactionPojo.getGroupId (), true);
                     }
 
 
-                    // 是最终事务发出的信息 ，那么就需要根据配置将一些缓存清除
-                    clear (transactionPojo.getGroupId (), false);
                 }
             } catch (Exception e) {
                 e.printStackTrace ();
             } finally {
-                readWrite.readLock ().unlock ();
+                readWrite.writeLock ().unlock ();
             }
         } else if (transactionType.equals (TransactionType.ROLLBACK)) {
-            readWrite.readLock ().lock ();
+            readWrite.writeLock ().lock ();
             try {
                 setOneType (transactionPojo.getGroupId (), transactionPojo.getTrmId (), TransactionType.ROLLBACK);
                 /**
@@ -149,7 +150,7 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
             } catch (Exception e) {
                 e.printStackTrace ();
             } finally {
-                readWrite.readLock ().unlock ();
+                readWrite.writeLock ().unlock ();
             }
         }
     }
@@ -190,57 +191,64 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
     }
 
     /**
-     * 清空缓存
+     * 是否将数据填入缓存中
      *
      * @param groupId
      */
     private static void clear(String groupId, boolean flag) {
         // 判断默认是否需要清楚数据
-        if (TransactionCache.clearFlag) {
-            // 清空事务组对应的所有RpcResponse
-            TransactionCache.TRM_GROUP_CACHE.remove (groupId);
-            // 删除最终事务Id
-            TransactionCache.FINAL_TRMID_CACHe.remove (groupId);
-            // 删除最终事务是否已经ROLLBACK了
-            TransactionCache.CURRENT_TRM_GROUP_IS_ROLLBACK.remove (groupId);
-            // 删除最终事务的状态
-            TransactionCache.FINAL_TRM_TYPE.remove (groupId);
-        } else {
-            // 开锁
-            sizeReadWrite.writeLock ().lock ();
-            try {
-                /**
-                 *  需要存入的话 我们需要判断是否是立马存入，因为这里区分了ROLLBACK和COMMIT的调用链
-                 *  如果是ROLLBACK的话就需要立马存入缓存中，因为COMMIT的调用链没有那么重要
-                 */
-                // 判断是否存入Redis中
-                if ("true".equals (TransactionCache.PROPERTIES_CONFIG.get (PropertiesConfigEnum.ACTIVE_REDIS_CACHE))) {
-                    // 存入redis
-                    if (flag) {
-                        /**
-                         * 立马存入说明已经发出ROLLBACK请求了 ，所以我们需要立马存入
-                         */
-                        addRedis (RedisKey.GTM_ROLLBACK_KEY + "", JSON.toJSONString (TransactionCache.TRM_GROUP_CACHE.get (groupId)));
-                    } else {
-                        // 非
-                        if (CURRENT_ADD_SIZE++ > MAX_SIZE_ADD_CACHE) {
-                            // 将当前添加的次数重置
-                            CURRENT_ADD_SIZE = 0;
-                            // 存入缓存中
-                            addRedis (RedisKey.GTM_COMMIT_KEY + "", JSON.toJSONString (TransactionCache.TRM_GROUP_CACHE.get (groupId)));
-                        }
-                    }
-
+        if ("true".equals (TransactionCache.PROPERTIES_CONFIG.get (PropertiesConfigEnum.ADD_REDIS_FLAG))) {
+            // 加锁
+            /**
+             *  需要存入的话 我们需要判断是否是立马存入，因为这里区分了ROLLBACK和COMMIT的调用链
+             *  如果是ROLLBACK的话就需要立马存入缓存中，因为COMMIT的调用链没有那么重要
+             */
+            // 判断是否存入Redis中
+            if ("true".equals (TransactionCache.PROPERTIES_CONFIG.get (PropertiesConfigEnum.ACTIVE_REDIS_CACHE))) {
+                // 存入redis
+                if (flag) {
+                    /**
+                     * 立马存入说明已经发出ROLLBACK请求了 ，所以我们需要立马存入
+                     */
+                    addRedis (RedisKey.GTM_ROLLBACK_KEY + "", JSON.toJSONString (TransactionCache.TRM_GROUP_CACHE.get (groupId)));
+                    clear (groupId, "false");
                 } else {
-                    // 存入其他缓存
-                    addElseCache ();
+                    // 非
+                    if (CURRENT_ADD_SIZE++ > MAX_SIZE_ADD_CACHE) {
+                        // 将当前添加的次数重置
+                        CURRENT_ADD_SIZE = 0;
+                        // 存入缓存中
+                        TransactionCache.TRM_GROUP_CACHE.forEach ((k, v) -> {
+                            addRedis (RedisKey.GTM_COMMIT_KEY + "", JSON.toJSONString (TransactionCache.TRM_GROUP_CACHE.get (v)));
+                        });
+                        clear (groupId, "true");
+                    }
                 }
-            } catch (Exception e) {
-                e.printStackTrace ();
-            } finally {
-                sizeReadWrite.writeLock ().unlock ();
+
+            } else {
+                // 存入其他缓存
+                addElseCache ();
             }
+        } else {
+            clear (groupId, "false");
         }
+
+    }
+
+    private static void clear(String groupId, String flag) {
+
+        if ("true".equals (flag)) {
+            TransactionCache.TRM_GROUP_CACHE.clear ();
+            return;
+        }
+        // 清空事务组对应的所有RpcResponse
+        TransactionCache.TRM_GROUP_CACHE.remove (groupId);
+        // 删除最终事务Id
+        TransactionCache.FINAL_TRMID_CACHe.remove (groupId);
+        // 删除最终事务是否已经ROLLBACK了
+        TransactionCache.CURRENT_TRM_GROUP_IS_ROLLBACK.remove (groupId);
+        // 删除最终事务的状态
+        TransactionCache.FINAL_TRM_TYPE.remove (groupId);
     }
 
     /**
