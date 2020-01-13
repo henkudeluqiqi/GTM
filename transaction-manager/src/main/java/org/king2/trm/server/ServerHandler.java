@@ -58,7 +58,7 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
                 // 创建事务组
                 List<RpcResponse> rpcResponses = new ArrayList<RpcResponse> ();
                 rpcResponses.add (new RpcResponse (TransactionType.NONE, transactionPojo.getTrmId (), ctx,
-                        transactionPojo.getGroupId ()));
+                        transactionPojo.getGroupId (), transactionPojo.getRequestURL ()));
                 // 将事务组数据存入缓存中
                 TransactionCache.TRM_GROUP_CACHE.put (transactionPojo.getGroupId (),
                         rpcResponses);
@@ -79,7 +79,7 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
                 List<RpcResponse> rpcResponses = TransactionCache.TRM_GROUP_CACHE.get (transactionPojo.getGroupId ());
                 if (rpcResponses != null) {
                     rpcResponses.add (new RpcResponse (TransactionType.NONE, transactionPojo.getTrmId (), ctx,
-                            transactionPojo.getGroupId ()));
+                            transactionPojo.getGroupId (), transactionPojo.getRequestURL ()));
                 }
                 System.out.println ("注册事务组---->>>" + JSON.toJSONString (transactionType));
             } catch (Exception e) {
@@ -90,7 +90,6 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
         } else if (transactionType.equals (TransactionType.COMMIT)) {
             readWrite.writeLock ().lock ();
             try {
-                setOneType (transactionPojo.getGroupId (), transactionPojo.getTrmId (), TransactionType.COMMIT);
                 // 判断当前事务组是否已经进行了处理
                 if (TransactionCache.CURRENT_TRM_GROUP_IS_ROLLBACK.get (transactionPojo.getGroupId ()) != null &&
                         TransactionCache.CURRENT_TRM_GROUP_IS_ROLLBACK.get (transactionPojo.getGroupId ()) != null &&
@@ -110,9 +109,11 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
                     if (finalTrmType == null || !finalTrmType.equals (TransactionType.ROLLBACK)) {
                         // 进行COMMIT
                         send (transactionPojo.getGroupId (), TransactionType.COMMIT);
+                        setOneType (transactionPojo.getGroupId (), transactionPojo.getTrmId (), TransactionType.COMMIT);
                         // 是最终事务发出的信息 ，那么就需要根据配置将一些缓存清除
                         clear (transactionPojo.getGroupId (), false);
                     } else {
+                        setOneType (transactionPojo.getGroupId (), transactionPojo.getTrmId (), TransactionType.ROLLBACK);
                         // 进行ROLLBACK
                         send (transactionPojo.getGroupId (), TransactionType.ROLLBACK);
                         // 是最终事务发出的信息 ，那么就需要根据配置将一些缓存清除
@@ -219,7 +220,7 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
                         CURRENT_ADD_SIZE = 0;
                         // 存入缓存中
                         TransactionCache.TRM_GROUP_CACHE.forEach ((k, v) -> {
-                            addRedis (RedisKey.GTM_COMMIT_KEY + "", JSON.toJSONString (TransactionCache.TRM_GROUP_CACHE.get (v)));
+                            addRedis (RedisKey.GTM_COMMIT_KEY + "", JSON.toJSONString (v));
                         });
                         clear (groupId, "true");
                     }
