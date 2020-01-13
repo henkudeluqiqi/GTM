@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>YGC V2 Timeline</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+
+</head>
+
+<body>
+<section id="cd-timeline" class="cd-container">
+    <div class="cd-timeline-block">
+        <div class="cd-timeline-img cd-picture">
+        </div>
+
+        <div class="cd-timeline-content">
+            <h2>调用发起者</h2>
+            <div class="timeline-content-info">
+          <span class="timeline-content-info-title">
+            <i class="fa fa-certificate" aria-hidden="true"></i>
+             状态： <span th:if="${fqz.oneType} == 'COMMIT'" style="color: chartreuse;"> COMMIT </span>
+               <span th:if="${fqz.oneType} == 'ROLLBACK'" style="color: red;"> ROLLBACK </span>
+          </span>
+                <span class="timeline-content-info-date">
+            <i class="fa fa-calendar-o" aria-hidden="true"></i>
+            时间：暂未集成
+          </span>
+            </div>
+            <p>[[${fqz.requestURL}]]</p>
+            <!--<ul class="content-skills">
+                <li>HTML5</li>
+                <li>CSS3</li>
+                <li>JavaScript</li>
+                <li>jQuery</li>
+                <li>Wordpress</li>
+            </ul>-->
+        </div> <!-- cd-timeline-content -->
+    </div> <!-- cd-timeline-block -->
+
+    <div class="cd-timeline-block" th:each="r: ${result}">
+        <div class="cd-timeline-img cd-movie">
+        </div> <!-- cd-timeline-img -->
+
+        <div class="cd-timeline-content">
+            <h2>下游系统</h2>
+            <div class="timeline-content-info">
+          <span class="timeline-content-info-title">
+            <i class="fa fa-certificate" aria-hidden="true"></i>
+             状态： <span th:if="${r.oneType} == 'COMMIT'" style="color: chartreuse;"> COMMIT </span>
+               <span th:if="${r.oneType} == 'ROLLBACK'" style="color: red;"> ROLLBACK </span>
+          </span>
+                <span class="timeline-content-info-date">
+            <i class="fa fa-calendar-o" aria-hidden="true"></i>
+            时间：暂未集成
+          </span>
+            </div>
+            <p>[[${r.requestURL}]]</p>
+        </div> <!-- cd-timeline-content -->
+    </div> <!-- cd-timeline-block -->
+
+
+    <!--  <div class="cd-timeline-block">
+          <div class="cd-timeline-img cd-picture">
+          </div> &lt;!&ndash; cd-timeline-img &ndash;&gt;
+
+          <div class="cd-timeline-content">
+              <h2>Title of section 3</h2>
+              <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Excepturi, obcaecati, quisquam id molestias
+                  eaque asperiores voluptatibus cupiditate error assumenda delectus odit similique earum voluptatem
+                  doloremque dolorem ipsam quae rerum quis. Odit, itaque, deserunt corporis vero ipsum nisi eius odio
+                  natus ullam provident pariatur temporibus quia eos repellat consequuntur perferendis enim amet quae
+                  quasi repudiandae sed quod veniam dolore possimus rem voluptatum eveniet eligendi quis fugiat aliquam
+                  sunt similique aut adipisci.</p>
+              <span class="cd-date">Jan 24</span>
+          </div> &lt;!&ndash; cd-timeline-content &ndash;&gt;
+      </div> &lt;!&ndash; cd-timeline-block &ndash;&gt;
+
+      <div class="cd-timeline-block">
+          <div class="cd-timeline-img cd-location">
+          </div> &lt;!&ndash; cd-timeline-img &ndash;&gt;
+
+          <div class="cd-timeline-content">
+              <h2>Title of section 4</h2>
+              <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Iusto, optio, dolorum provident rerum aut hic
+                  quasi placeat iure tempora laudantium ipsa ad debitis unde? Iste voluptatibus minus veritatis qui
+                  ut.</p>
+              <span class="cd-date">Feb 14</span>
+          </div> &lt;!&ndash; cd-timeline-content &ndash;&gt;
+      </div> &lt;!&ndash; cd-timeline-block &ndash;&gt;
+
+      <div class="cd-timeline-block">
+          <div class="cd-timeline-img cd-location">
+          </div>
+
+          <div class="cd-timeline-content">
+              <h2>Title of section 5</h2>
+              <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Iusto, optio, dolorum provident rerum.</p>
+              <span class="cd-date">Feb 18</span>
+          </div> &lt;!&ndash; cd-timeline-content &ndash;&gt;
+      </div> &lt;!&ndash; cd-timeline-block &ndash;&gt;
+  -->
+</section> <!-- cd-timeline -->
+
+</body>
+</html>

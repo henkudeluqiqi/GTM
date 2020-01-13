@@ -1,0 +1,11 @@
+server:
+  port: 8889
+
+
+spring:
+  application:
+    thymeleaf:
+      prefix: classpath:/templates/
+      suffix: .html
+      cache: false
+      mode: HTML5
