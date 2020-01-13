@@ -91,6 +91,7 @@ public class GroupTransactionAspect {
         TransactionPojo transactionPojo = new TransactionPojo (groupId, trmId, TransactionType.CREATE_TRM_GROUP);
         // 存入事务缓存中
         // 加锁
+        transactionPojo.setRequestURL (TransactionCache.CURRENT_REQUEST_URL.get ());
         ReentrantReadWriteLock.WriteLock writeLock = TransactionCache.rwLock.writeLock ();
         writeLock.lock ();
         try {
@@ -118,6 +119,7 @@ public class GroupTransactionAspect {
         // 封装参数
         TransactionPojo transactionPojo =
                 new TransactionPojo (groupId, trmId, TransactionType.REGISTER_TRM);
+        transactionPojo.setRequestURL (TransactionCache.CURRENT_REQUEST_URL.get ());
         // 存入事务缓存中
         tpcPut (trmId, transactionPojo);
         TransactionCache.CURRENT_TD.set (transactionPojo);

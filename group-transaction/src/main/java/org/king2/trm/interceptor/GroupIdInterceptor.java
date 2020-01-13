@@ -20,12 +20,15 @@ public class GroupIdInterceptor implements HandlerInterceptor {
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
 
+        // 获取到本次的一个路径 供后面调用错误时检查
+        String requestURL = request.getRequestURL ().toString ();
         // 从头部获取groupId
         String groupId = request.getHeader ("GTM_GROUP_ID");
         if (groupId == null) {
             groupId = request.getParameter ("GTM_GROUP_ID");
         }
         TransactionCache.CURRENT_GROUP_ID.set (groupId);
+        TransactionCache.CURRENT_REQUEST_URL.set (requestURL);
         return true;
     }
 }

@@ -53,6 +53,12 @@ public class TransactionCache {
             new ThreadLocal<> ();
 
     /**
+     * 当前线程的URL
+     */
+    public static final ThreadLocal<String> CURRENT_REQUEST_URL =
+            new ThreadLocal<> ();
+
+    /**
      * 读写锁
      */
     public static final ReentrantReadWriteLock rwLock =
