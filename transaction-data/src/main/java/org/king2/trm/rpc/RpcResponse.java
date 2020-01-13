@@ -24,7 +24,7 @@ public class RpcResponse implements Serializable {
     /**
      * 他自己的一个状态
      */
-    private TransactionType oneType;
+    private TransactionType oneType = TransactionType.COMMIT;
     /**
      * 本次事务的id
      */
@@ -38,13 +38,28 @@ public class RpcResponse implements Serializable {
      */
     private String groupId;
 
-    public RpcResponse(TransactionType finalTransactionType, String trmId, ChannelHandlerContext chx, String groupId) {
+    /**
+     * 请求的路径
+     */
+    private String requestURL;
+
+    public RpcResponse(TransactionType finalTransactionType, String trmId, ChannelHandlerContext chx, String groupId,
+                       String requestURL) {
         this.finalTransactionType = finalTransactionType;
         this.trmId = trmId;
         this.chx = chx;
         this.groupId = groupId;
+        this.requestURL = requestURL;
     }
 
+
+    public String getRequestURL() {
+        return requestURL;
+    }
+
+    public void setRequestURL(String requestURL) {
+        this.requestURL = requestURL;
+    }
 
     public TransactionType getOneType() {
         return oneType;

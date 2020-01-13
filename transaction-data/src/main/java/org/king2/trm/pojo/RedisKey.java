@@ -9,6 +9,7 @@ package org.king2.trm.pojo;
  * =======================================================
  */
 public enum RedisKey {
+
     /**
      * GTM发出了ROLLBACK的key
      */

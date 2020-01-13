@@ -67,5 +67,5 @@ public class TransactionCache {
      * 服务端的配置文件缓存
      */
     public static final Map<String, String> PROPERTIES_CONFIG =
-            new ConcurrentHashMap<> ();
+            new ConcurrentHashMap<String, String> ();
 }

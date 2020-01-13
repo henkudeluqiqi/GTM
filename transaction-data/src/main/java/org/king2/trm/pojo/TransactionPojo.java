@@ -29,11 +29,25 @@ public class TransactionPojo implements Serializable {
     private TransactionType transactionType;
 
     /**
+     * 请求路径
+     */
+    private String requestURL;
+
+    /**
      * 任务阻塞
      */
     private Task task;
 
     public TransactionPojo() {
+    }
+
+
+    public String getRequestURL() {
+        return requestURL;
+    }
+
+    public void setRequestURL(String requestURL) {
+        this.requestURL = requestURL;
     }
 
     public TransactionPojo(String groupId, String trmId, TransactionType transactionType) {
