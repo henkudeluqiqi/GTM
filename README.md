@@ -24,4 +24,6 @@ group-transaction 主要是创建了一个分布式的分布事务，使用者�
 # TA
 Transaction-Advanced
 事务的调用链，提供了可视化页面，可精确定位到哪一个服务出现了异常。
-
+![Image text](https://github.com/henkudeluqiqi/GTM/raw/master/transaction-advanced/分析页面1.png)
+![Image text](https://github.com/henkudeluqiqi/GTM/raw/master/transaction-advanced/分析页面2.png)
+![Image text](https://github.com/henkudeluqiqi/GTM/raw/master/transaction-advanced/分析页面3.png)
